@@ -1,5 +1,9 @@
 Revision history for Perl extension Apache::ProxyScan.
 
+0.92  Thu Sep 30 2004
+   -  fixed handling of POST requests
+   -  fixed contact addresses 
+
 0.91  Wed Sep 29 2004
     - first beta for use with Apache 2.0 (mod_perl 1.99_12 minimum)
 

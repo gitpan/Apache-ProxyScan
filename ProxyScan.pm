@@ -17,7 +17,7 @@ use Apache::RequestIO;
 use Apache::Log;
 use Apache::Response ();
 
-$VERSION = "0.91";
+$VERSION = "0.92";
 # create a mime type detector once. 
 # You need File::Magic even if you don't use it
 my $MIME = File::MMagic::new('/etc/httpd/conf/magic');
@@ -73,7 +73,7 @@ sub proxy_handler {
   # transfer request if it's POST
   # try to handle without content length
   if ($r->method eq 'POST') {
-    my $len = $r->header_in('Content-length');
+    my $len = $r->headers_in->{'Content-length'};
     if (defined $len) {
       my $buf;
       $r->read($buf, $len);
@@ -370,7 +370,7 @@ http headers.
 =head1 SUPPORT
 
 The latest version of this module can be found at CPAN and at
-L<http://core.trancentral.org/core/software/Apache-ProxyScan/>. 
+L<http://www.sourcentral.org/Apache-ProxyScan/>. 
 Send questions and suggestions directly to the author (see below).
 
 =head1 SEE ALSO
@@ -379,7 +379,7 @@ L<mod_perl>, L<Apache>, L<LWP::UserAgent>
 
 =head1 AUTHOR
 
-Oliver Paukstadt <cpan@trancentral.org>
+Oliver Paukstadt <cpan@sourcentral.org>
 
 Based on Apache::ProxyPassThrough from Bjoern Hansen and Doug MacEachern
 

@@ -86,7 +86,7 @@ If the return code ist not 0 and the file is deleted, then the Handler
 returns the standard output of the wrapper script.
 
 If you wrote a wrapper for an unsupported av tool, send it to
-cpan at trancentral dot org. Maybe I will put it into the next package
+cpan at sourcentral dot org. Maybe I will put it into the next package
 of Apache::ProxyScan.
 
 The Power of Apache::ProxyScan
@@ -133,5 +133,5 @@ Send me information about your box (CPUs, RAM, Disks), your av tool,
 the number of users, your daily throughput, your peak throughput per hour 
 or minute and so on.
 
-any comments? write to cpan at trancentral dot org.
+any comments? write to cpan at sourcentral dot org.
 
