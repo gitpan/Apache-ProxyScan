@@ -57,7 +57,7 @@ WriteMakefile(
     'VERSION_FROM' => 'ProxyScan.pm',
  #   'INC'          => Apache::src->new->inc,
     'PREREQ_PM'    => {
-        'Apache::Constants'     => '0', # or a minimum workable version
+        'Apache2'               => '0', # or a minimum workable version
         'LWP::UserAgent'	=> '0',
         'File::MMagic'		=> '0',
 	'URI::URL'		=> '0',

@@ -6,10 +6,18 @@ use vars qw($VERSION);
 
 use LWP::UserAgent ();
 use URI::URL;
-use Apache::Constants ':common';
 use File::MMagic;
 
-$VERSION = "0.31";
+use Apache::Const qw(OK DECLINED :log);
+use APR::Const qw(:error SUCCESS);
+use APR::Table;
+use Apache::RequestRec;
+use Apache::RequestUtil;
+use Apache::RequestIO;
+use Apache::Log;
+use Apache::Response ();
+
+$VERSION = "0.91";
 # create a mime type detector once. 
 # You need File::Magic even if you don't use it
 my $MIME = File::MMagic::new('/etc/httpd/conf/magic');
@@ -31,7 +39,7 @@ sub handler {
     my $ext = pop @pc;
     if ($ext =~ s/^.*\.([^.]+)/$1/igs) {
       if (defined $extension{lc("$ext")}) {
-	$r->warn("Trusted File Extension: ".$r->uri);
+	$r->log->warn($r, "Trusted File Extension: ".$r->uri);
 	return DECLINED;
       }
     }
@@ -57,10 +65,9 @@ sub proxy_handler {
   my $request = new HTTP::Request $r->method, $r->uri;
   
   # copy request headers
-  my($key,$val);
-  my(%headers_in) = $r->headers_in;
-  while(($key,$val) = each %headers_in) {
-    $request->header($key,$val);
+  my $table = $r->headers_in;
+  foreach my $key (keys %{$table}) {
+      $request->header($key,$table->{$key});
   }
   
   # transfer request if it's POST
@@ -85,32 +92,31 @@ sub proxy_handler {
   my $delivered = 0;
   my $headersent = 0;
   my $trustworthy = 0;
-  my $file = undef;
+  my $file;
   my $outfile = undef;
-  my @chars = ( "A" .. "Z", "a" .. "z", 0 .. 9 );
   
   my $fetchref = sub {
     my($data, $res, $protocol) = @_;
     if ($callcount == 0) {
-      my $mime = $MIME->checktype_contents($data) if (defined $trustmime );
+      my $mime = $MIME->checktype_contents($data);
       if ((defined $trustmime ) && ($mime =~ m§^($trustmime)$§i)) {
 	$trustworthy = 1;
-	$r->warn("Trusted MIME Type: ".$r->uri);
+	$r->log->warn($r, "Trusted MIME Type: ".$r->uri);
 	prepareheaders(\$r,\$res);
-	$r->send_http_header();
+	$r->rflush();
       } else {
 	# make a nice filename
+	my @chars = ( "A" .. "Z", "a" .. "z", 0 .. 9 );
 	$file = substr($r->uri , 0, 200);
 	$file =~ s/[^A-Z0-9]+/_/igs;
 	$file .= join("", @chars[ map { rand @chars } ( 1 .. 16 ) ] );
-	$outfile = Apache::gensym();
 	open($outfile, ">$tmpdir/$file");
 	my $len =  $res->header('Content-Length');
-	if (($res->code == 200) && ($len > $presendsize)) {
-	  $r->warn("started predelivery on: ".$r->uri);
+	if ($len > $presendsize) {
+	  $r->log->warn($r,"started predelivery on: ".$r->uri);
 	  $res->remove_header('Content-Length');
 	  prepareheaders(\$r,\$res);
-	  $r->send_http_header();
+	  $r->rflush();
 	  $headersent=1;
 	  print substr $data,0,5; 
 	  $delivered += 5;
@@ -138,13 +144,7 @@ sub proxy_handler {
   # we are paraniod so we scan the server message too
   # DNS Errors are reported by LWP::UA as Code 500 with empty content
   if (!$res->is_success) {
-    my $fh = Apache::gensym();
-    if (!defined $file) {
-      $file = substr($r->uri , 0, 200);
-      $file =~ s/[^A-Z0-9]+/_/igs;
-      $file .= join("", @chars[ map { rand @chars } ( 1 .. 16 ) ] );
-    }
-    open($fh, ">$tmpdir/$file");
+    open(my $fh, ">$tmpdir/$file");
     my $msg = $res->content;
     if (($res->code == 500) && ($msg eq "")) {
       $msg = $res->message;
@@ -155,8 +155,7 @@ sub proxy_handler {
   
   # try to scan file
   if (!$trustworthy) {
-    my $fh = Apache::gensym();
-    open($fh,"$scanner '$tmpdir/$file' |");
+    open(my $fh,"$scanner '$tmpdir/$file' |");
     my @msg=<$fh>;
     close($fh);
     my $scanrc = $?;
@@ -176,20 +175,13 @@ sub proxy_handler {
     if ($scanrc == 0) {
       if (-e "$tmpdir/$file") {
         if (!$headersent) {
-          $r->send_http_header();
+          $r->rflush();
         }
-        my $fh = Apache::gensym();
-        open($fh, "<$tmpdir/$file");
-        if ($delivered > 0) {
-          my $dummy;
-          read($fh, $dummy, $delivered);
-        }
-        $r->send_fd($fh);
-        close($fh);
+        $r->sendfile("$tmpdir/$file", $delivered);
       } else {
         if ($res->is_error) {
           if (!$headersent) {
-	    $r->send_http_header();
+	    $r->rflush();
           }
 	  $r->print($res->error_as_HTML);
         } else {
@@ -202,7 +194,7 @@ sub proxy_handler {
         my $msg=join("\n", @msg);
         generateError(\$r, "Scanner Error", "Scanning ".$r->uri.":\n$msg");
       } else {
-        $r->header_out("content-length" => undef);
+        $r->headers_out->set("content-length" => undef);
         $r->send_cgi_header(join('', @msg));
 	my $entry = join('', @msg);
 	$entry =~ s/<.*?>//igs;
@@ -227,8 +219,8 @@ sub generateError {
   my $msg = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n<html><head>\n<title>$title</title>\n</head><body>\n<h1>$title</h1>\n$text\n</body></html>\n";
   
   $$r->content_type("text/html");
-  $$r->header_out("content-length" => length($msg));
-  $$r->send_http_header();
+  $$r->headers_out->set("content-length" => length($msg));
+  $$r->rflush();
   $$r->print("$msg");
   
   return 1;
@@ -246,7 +238,6 @@ sub prepareheaders {
 	      });
   return 1;
 }
-
 
 
 1;
@@ -402,3 +393,4 @@ and/or modify it under the same terms as Perl itself.
 
  DA FORCE COMING DOWN WITH MAYHEM  
  LOOKING AT MY WATCH TIME 3.A.M.
+

@@ -14,7 +14,7 @@ if (defined $ENV{'SCAN_TMP'}) {
   $optd="--tempdir=".$ENV{'SCAN_TMP'};
 } 
 
-open(FH, "ulimit -t60 ; /usr/local/bin/clamscan --threads=0 $optd --remove --stdout --disable-summary '$file' |");
+open(FH, "ulimit -t60 ; /usr/bin/clamscan --mbox --threads=0 $optd --remove --stdout --disable-summary '$file' |");
 @msg = <FH>;
 close FH;
 $rc = $?;

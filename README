@@ -12,7 +12,8 @@ like every other perl module do
 
 Prepare Apache for use of Apache::ProxyScan
 -------------------------------------------
-You need an Apache 1.3 webserver with mod_perl (Apache 2.0 is untested). 
+You need an Apache 2.0 webserver with mod_perl 1.99_12 or higher
+(If you want to use Apache 1.3 use Apache-ProxyScan-0.31)  
 
 Add the following lines to your httpd.conf
 Use the proper wrapper for your av-tool from Apache-ProxyScan-X.XX/eg/ 
