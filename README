@@ -20,6 +20,7 @@ Use the proper wrapper for your av-tool from Apache-ProxyScan-X.XX/eg/
   PerlTransHandler  Apache::ProxyScan
   PerlSetVar        ProxyScanScanner "/usr/local/bin/clamav.pl"
   PerlSetVar        ProxyScanTempDir /var/cache/virus/dl/
+  PerlSetVar        ProxyScanPredeliverSize     102400
   PerlSetEnv 	    SCAN_TMP 	   /var/cache/virus/av/
 
 If you want to handle https requests as well, activate mod_proxy and allow
@@ -102,6 +103,7 @@ LWP::UserAgent.
 
 Timeouts
 --------
+*fix this for ProxyScanPredeliverSize*
 OK, and here the special sections about timeouts:
 Users are used to get a growing download bar when the start a download.
 We don't deliver a byte of the downloaded file until we know if it is clean

@@ -1,5 +1,12 @@
 Revision history for Perl extension Apache::ProxyScan.
 
+0.30  Sat Apr  5 2003
+    - major changes on the download procedure 
+    - added a special handling for large files
+    - added short circuit configurations to speed up handling
+    - added logging into error log
+    - updated man-page and README
+
 0.26  Tue Feb 18 2003
     - fixed prereqs in Makefile
     - removed debugging from ProxyScan.pm
