@@ -1,8 +1,27 @@
 package Apache::ProxyScan;
 
-use ExtUtils::MakeMaker;
+use ExtUtils::MakeMaker qw(prompt WriteMakefile);
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
+
+@magicguess = ( "/etc/httpd/magic", "/etc/httpd/conf/magic", "/etc/magic", 
+                "/etc/mime-magic", "/usr/share/misc/magic.mime", 
+                "/usr/share/magic.mime", "/usr/share/magic");
+
+foreach $mm (@magicguess) {
+  if ( -s "$mm" ) {
+    $guess = $mm;
+    last;
+  }
+}
+
+do {
+  $magic = prompt("Path of your (Apache) mime magic file: [$guess]");
+  $magic = $guess if ($magic =~ m/^\s*$/igs);
+  print "Path: $magic\n";
+} until (-s $magic);
+
+system('perl','-p','-i.bak','-e','s§^my\s+\$MIME\s*=\s*File::MMagic::new.*$§my \$MIME = File::MMagic::new('."'$magic'".');§g','ProxyScan.pm');
 
 #use Apache::ExtUtils qw(command_table);
 #use Apache::src();

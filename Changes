@@ -1,5 +1,11 @@
 Revision history for Perl extension Apache::ProxyScan.
 
+0.31  Mon Apr  7 2003
+    - added configuration question for mime.magic file
+    - fixed DNS resolve error messages
+    - predelivery only on http response code 200
+    - mimetype detection only if TrustedMIMEs are defined
+
 0.30  Sat Apr  5 2003
     - major changes on the download procedure 
     - added a special handling for large files

@@ -9,7 +9,7 @@ use URI::URL;
 use Apache::Constants ':common';
 use File::MMagic;
 
-$VERSION = "0.30";
+$VERSION = "0.31";
 # create a mime type detector once. 
 # You need File::Magic even if you don't use it
 my $MIME = File::MMagic::new('/etc/httpd/conf/magic');
@@ -85,13 +85,14 @@ sub proxy_handler {
   my $delivered = 0;
   my $headersent = 0;
   my $trustworthy = 0;
-  my $file;
+  my $file = undef;
   my $outfile = undef;
+  my @chars = ( "A" .. "Z", "a" .. "z", 0 .. 9 );
   
   my $fetchref = sub {
     my($data, $res, $protocol) = @_;
     if ($callcount == 0) {
-      my $mime = $MIME->checktype_contents($data);
+      my $mime = $MIME->checktype_contents($data) if (defined $trustmime );
       if ((defined $trustmime ) && ($mime =~ m§^($trustmime)$§i)) {
 	$trustworthy = 1;
 	$r->warn("Trusted MIME Type: ".$r->uri);
@@ -99,14 +100,13 @@ sub proxy_handler {
 	$r->send_http_header();
       } else {
 	# make a nice filename
-	my @chars = ( "A" .. "Z", "a" .. "z", 0 .. 9 );
 	$file = substr($r->uri , 0, 200);
 	$file =~ s/[^A-Z0-9]+/_/igs;
 	$file .= join("", @chars[ map { rand @chars } ( 1 .. 16 ) ] );
 	$outfile = Apache::gensym();
 	open($outfile, ">$tmpdir/$file");
 	my $len =  $res->header('Content-Length');
-	if ($len > $presendsize) {
+	if (($res->code == 200) && ($len > $presendsize)) {
 	  $r->warn("started predelivery on: ".$r->uri);
 	  $res->remove_header('Content-Length');
 	  prepareheaders(\$r,\$res);
@@ -139,6 +139,11 @@ sub proxy_handler {
   # DNS Errors are reported by LWP::UA as Code 500 with empty content
   if (!$res->is_success) {
     my $fh = Apache::gensym();
+    if (!defined $file) {
+      $file = substr($r->uri , 0, 200);
+      $file =~ s/[^A-Z0-9]+/_/igs;
+      $file .= join("", @chars[ map { rand @chars } ( 1 .. 16 ) ] );
+    }
     open($fh, ">$tmpdir/$file");
     my $msg = $res->content;
     if (($res->code == 500) && ($msg eq "")) {
