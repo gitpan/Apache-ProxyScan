@@ -1,5 +1,8 @@
 Revision history for Perl extension Apache::ProxyScan.
 
+0.25  Mon Feb 17 2003
+    - fixed url/file mapping with urls larger than 255 characters
+
 0.24  Wed Jan 01 2003
     - fixed Version variable before first upload to CPAN
     - removed debugging from rav.pl

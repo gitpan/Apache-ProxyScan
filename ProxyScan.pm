@@ -9,7 +9,7 @@ use Data::Dumper;
 use URI::URL;
 use Apache::Constants ':common';
 
-$VERSION = "0.24";
+$VERSION = "0.25";
 
 sub handler {
     my($r) = @_;
@@ -26,10 +26,13 @@ sub proxy_handler {
     my $scanner = $r->dir_config("ProxyScanScanner");
     my $dir = $r->dir_config("ProxyScanTempDir");
     # make a nice filename
+    my @chars = ( "A" .. "Z", "a" .. "z", 0 .. 9 );
     my $file = (URI::URL->new($r->uri))->path;
     $file =~ s/[^A-Z0-9]+/_/igs;
     $file =~ s/^$/file/igs;
- 
+    $file = substr($file, 0, 200);
+    $file .= join("", @chars[ map { rand @chars } ( 1 .. 16 ) ] );
+
     # create the request
     my $request = new HTTP::Request $r->method, $r->uri;
 
