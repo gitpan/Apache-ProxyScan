@@ -5,11 +5,10 @@ use vars qw($VERSION);
 
 use LWP::UserAgent ();
 use File::Temp qw/ tempdir /;
-use Data::Dumper;
 use URI::URL;
 use Apache::Constants ':common';
 
-$VERSION = "0.25";
+$VERSION = "0.26";
 
 sub handler {
     my($r) = @_;

@@ -1,5 +1,9 @@
 Revision history for Perl extension Apache::ProxyScan.
 
+0.26  Tue Feb 18 2003
+    - fixed prereqs in Makefile
+    - removed debugging from ProxyScan.pm
+
 0.25  Mon Feb 17 2003
     - fixed url/file mapping with urls larger than 255 characters
 
